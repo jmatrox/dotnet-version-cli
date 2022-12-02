@@ -12,9 +12,9 @@ namespace Skarp.Version.Cli.CsProj
             string version = string.Empty;
             string fileVersion = string.Empty;
 
-            Regex patternVersion = new("^\\[assembly: AssemblyVersion\\(\"(?<AssemblyVersion>.*)\"\\)]$", RegexOptions.IgnoreCase);
-            Regex patternFileVersion = new("^\\[assembly: AssemblyFileVersion\\(\"(?<AssemblyFileVersion>.*)\"\\)]$", RegexOptions.IgnoreCase);
-            Regex patternTitle = new("^\\[assembly: AssemblyTitle\\(\"(?<AssemblyTitle>.*)\"\\)]$", RegexOptions.IgnoreCase);
+            Regex patternVersion = new Regex("^\\[assembly: AssemblyVersion\\(\"(?<AssemblyVersion>.*)\"\\)]$", RegexOptions.IgnoreCase);
+            Regex patternFileVersion = new Regex("^\\[assembly: AssemblyFileVersion\\(\"(?<AssemblyFileVersion>.*)\"\\)]$", RegexOptions.IgnoreCase);
+            Regex patternTitle = new Regex("^\\[assembly: AssemblyTitle\\(\"(?<AssemblyTitle>.*)\"\\)]$", RegexOptions.IgnoreCase);
 
             for (int i = 0; i < fileContent.Length; i++)
             {

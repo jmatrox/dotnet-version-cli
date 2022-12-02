@@ -21,7 +21,7 @@ namespace Skarp.Version.Cli
 
             var commandLineApplication = new CommandLineApplication(throwOnUnexpectedArg: false)
             {
-                Name = "dotnet version",
+                Name = "dotnet version-netframework",
                 ExtendedHelpText =
                     $"{Environment.NewLine}Available commands after [options] to control the version bump are: {Environment.NewLine}\tmajor | minor | patch | premajor | preminor | prepatch | prerelease | <specific version>"
             };

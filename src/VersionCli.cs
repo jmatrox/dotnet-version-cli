@@ -45,11 +45,11 @@ namespace Skarp.Version.Cli
                     $"Unable to find the vcs tool {_vcsTool.ToolName()} in your path");
             }
 
-            //if (!args.DryRun && args.DoVcs && !_vcsTool.IsRepositoryClean())
-            //{
-            //    throw new OperationCanceledException(
-            //        "You currently have uncomitted changes in your repository, please commit these and try again");
-            //}
+            if (!args.DryRun && args.DoVcs && !_vcsTool.IsRepositoryClean())
+            {
+                throw new OperationCanceledException(
+                    "You currently have uncomitted changes in your repository, please commit these and try again");
+            }
 
             string csProjXml = string.Empty;
 

@@ -7,7 +7,7 @@ namespace Skarp.Version.Cli
         /// <summary>
         /// The name of the product
         /// </summary>
-        public const string Name = "dotnet-version-cli";
+        public const string Name = "dotnet-version-framework-cli";
 
         /// <summary>
         /// The version of the running product

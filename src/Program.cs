@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.Extensions.CommandLineUtils;
 using Skarp.Version.Cli.CsProj;
@@ -16,7 +17,7 @@ namespace Skarp.Version.Cli
 
         static int Main(string[] args)
         {
-            SetUpDependencies();
+            SetUpDependenciesNETFramework();
 
             var commandLineApplication = new CommandLineApplication(throwOnUnexpectedArg: false)
             {
@@ -43,6 +44,16 @@ namespace Skarp.Version.Cli
             var csProjectFileOption = commandLineApplication.Option(
                 "-f | --project-file <path/to/csproj>",
                 "The project file to work on. Defaults to auto-locating in current directory",
+                CommandOptionType.SingleValue);
+
+            var assemblyInfoOption = commandLineApplication.Option(
+                "-a | --assembly-info-file <path/to/assemblyinfo.cs>",
+                "The assemblyinfo.cs file to update version",
+                CommandOptionType.SingleValue);
+
+            var nuspecOption = commandLineApplication.Option(
+                "-n | --nuspec-file <path/to/nuspec>",
+                "The nuspec file to update version",
                 CommandOptionType.SingleValue);
 
             var buildMetaOption = commandLineApplication.Option(
@@ -103,7 +114,9 @@ namespace Skarp.Version.Cli
                         buildMetaOption.Value(),
                         prefixOption.Value(),
                         commitMessage.Value(),
-                        vcsTag.Value()
+                        vcsTag.Value(),
+                        nuspecOption.Value(),
+                        assemblyInfoOption.Value()
                     );
                     _cli.Execute(cliArgs);
 
@@ -143,7 +156,9 @@ namespace Skarp.Version.Cli
             string userSpecifiedBuildMeta,
             string preReleasePrefix,
             string commitMessage,
-            string vcsTag
+            string vcsTag,
+            string nuspecFilePath,
+            string assemblyInfoPath
         )
         {
             if (remainingArguments == null || !remainingArguments.Any())
@@ -163,6 +178,7 @@ namespace Skarp.Version.Cli
                 PreReleasePrefix = preReleasePrefix,
                 CommitMessage = commitMessage,
                 VersionControlTag = vcsTag,
+                AssemblyInfoFilePath = assemblyInfoPath
             };
             var bump = VersionBump.Patch;
 
@@ -177,6 +193,8 @@ namespace Skarp.Version.Cli
 
             args.VersionBump = bump;
             args.CsProjFilePath = userSpecifiedCsProjFilePath;
+            args.NuspecFilePath = nuspecFilePath;
+            args.AssemblyInfoFilePath = assemblyInfoPath;
 
             return args;
         }
@@ -190,6 +208,21 @@ namespace Skarp.Version.Cli
                     dotNetFileSystemProvider
                 ),
                 new ProjectFileParser(),
+                new VcsParser(),
+                new ProjectFileVersionPatcher(dotNetFileSystemProvider),
+                new SemVerBumper()
+            );
+        }
+
+        private static void SetUpDependenciesNETFramework()
+        {
+            var dotNetFileSystemProvider = new DotNetFileSystemProvider();
+            _cli = new VersionCli(
+                new GitVcs(),
+                new ProjectFileDetector(
+                    dotNetFileSystemProvider
+                ),
+                new ProjectFileParserNETFramework(),
                 new VcsParser(),
                 new ProjectFileVersionPatcher(dotNetFileSystemProvider),
                 new SemVerBumper()

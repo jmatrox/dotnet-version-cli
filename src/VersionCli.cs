@@ -1,4 +1,7 @@
 using System;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Xml;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Skarp.Version.Cli.CsProj;
@@ -42,14 +45,23 @@ namespace Skarp.Version.Cli
                     $"Unable to find the vcs tool {_vcsTool.ToolName()} in your path");
             }
 
-            if (!args.DryRun && args.DoVcs && !_vcsTool.IsRepositoryClean())
-            {
-                throw new OperationCanceledException(
-                    "You currently have uncomitted changes in your repository, please commit these and try again");
-            }
+            //if (!args.DryRun && args.DoVcs && !_vcsTool.IsRepositoryClean())
+            //{
+            //    throw new OperationCanceledException(
+            //        "You currently have uncomitted changes in your repository, please commit these and try again");
+            //}
 
-            var csProjXml = _fileDetector.FindAndLoadCsProj(args.CsProjFilePath);
-            _fileParser.Load(csProjXml, ProjectFileProperty.Version, ProjectFileProperty.PackageVersion);
+            string csProjXml = string.Empty;
+
+            if (_fileParser is ProjectFileParserNETFramework)
+            {
+                _fileParser.Load(args.AssemblyInfoFilePath);
+            }
+            else
+            {
+                csProjXml = _fileDetector.FindAndLoadCsProj(args.CsProjFilePath);
+                _fileParser.Load(csProjXml, ProjectFileProperty.Version, ProjectFileProperty.PackageVersion);
+            }
 
             var semVer = _bumper.Bump(
                 SemVer.FromString(_fileParser.PackageVersion),
@@ -75,23 +87,46 @@ namespace Skarp.Version.Cli
 
             if (!args.DryRun) // if we are not in dry run mode, then we should go ahead
             {
-                _fileVersionPatcher.Load(csProjXml);
-
-                _fileVersionPatcher.PatchVersionField(
-                    _fileParser.Version,
-                    versionString
-                );
-
-                _fileVersionPatcher.Flush(
-                    _fileDetector.ResolvedCsProjFile
-                );
-
-                if (args.DoVcs)
+                if (!string.IsNullOrEmpty(args.AssemblyInfoFilePath))
                 {
-                    _fileParser.Load(csProjXml, ProjectFileProperty.Title);
-                    // Run git commands
-                    _vcsTool.Commit(_fileDetector.ResolvedCsProjFile, _vcsParser.Commit(theOutput, _fileParser, args.CommitMessage));
-                    _vcsTool.Tag(_vcsParser.Tag(theOutput, _fileParser, args.VersionControlTag));
+                    bool assemblyInfoAggiornato = AggiornaAssemblyInfo(args.AssemblyInfoFilePath, theOutput.OldVersion, theOutput.NewVersion);
+
+                    bool nuspecAggiornato = AggiornaNuspec(args.NuspecFilePath, theOutput.NewVersion);
+
+                    if (args.DoVcs)
+                    {
+                        string commitFiles = string.Empty;
+                        if (assemblyInfoAggiornato)
+                            commitFiles += $" \"{args.AssemblyInfoFilePath}\"";
+                        if (nuspecAggiornato)
+                            commitFiles += $" \"{args.NuspecFilePath}\"";
+
+                        // Run git commands
+                        _vcsTool.Commit(commitFiles, _vcsParser.Commit(theOutput, _fileParser, args.CommitMessage));
+
+                        _vcsTool.Tag(_vcsParser.Tag(theOutput, _fileParser, args.VersionControlTag));
+                    }
+                }
+                else
+                {
+                    _fileVersionPatcher.Load(csProjXml);
+
+                    _fileVersionPatcher.PatchVersionField(
+                        _fileParser.Version,
+                        versionString
+                    );
+
+                    _fileVersionPatcher.Flush(
+                        _fileDetector.ResolvedCsProjFile
+                    );
+
+                    if (args.DoVcs)
+                    {
+                        _fileParser.Load(csProjXml, ProjectFileProperty.Title);
+                        // Run git commands
+                        _vcsTool.Commit(_fileDetector.ResolvedCsProjFile, _vcsParser.Commit(theOutput, _fileParser, args.CommitMessage));
+                        _vcsTool.Tag(_vcsParser.Tag(theOutput, _fileParser, args.VersionControlTag));
+                    }
                 }
             }
 
@@ -109,6 +144,65 @@ namespace Skarp.Version.Cli
             }
 
             return theOutput;
+        }
+
+        private bool AggiornaAssemblyInfo(string assemblyInfoFilePath, string oldVersion, string newVersion)
+        {
+            bool result = false;
+            if (File.Exists(assemblyInfoFilePath))
+            {
+                try
+                {
+                    string[] assemblyInfoContent = File.ReadAllLines(assemblyInfoFilePath);
+
+                    for (int i = 0; i < assemblyInfoContent.Length; i++)
+                    {
+                        if (assemblyInfoContent[i] == $"[assembly: AssemblyVersion(\"{oldVersion}.0\")]")
+                            assemblyInfoContent[i] = $"[assembly: AssemblyVersion(\"{newVersion}.0\")]";
+
+                        if (assemblyInfoContent[i] == $"[assembly: AssemblyFileVersion(\"{oldVersion}.0\")]")
+                            assemblyInfoContent[i] = $"[assembly: AssemblyFileVersion(\"{newVersion}.0\")]";
+                    }
+
+                    result = true;
+                    File.WriteAllLines(assemblyInfoFilePath, assemblyInfoContent);
+                }
+                catch { }
+            }
+            return result;
+        }
+
+        //Aggiorna il file .nuspec
+        private static bool AggiornaNuspec(string nugetFilePath, string newVersion)
+        {
+            bool result = false;
+            if (File.Exists(nugetFilePath))
+            {
+                try
+                {
+                    string[] nuspecContent = File.ReadAllLines(nugetFilePath);
+
+                    Regex pattern = new Regex("<version>(?<oldValue>.*)</version>", RegexOptions.IgnoreCase);
+                    Match match;
+
+                    for (int i = 0; i < nuspecContent.Length; i++)
+                    {
+                        match = pattern.Match(nuspecContent[i]);
+                        if (match.Length > 0)
+                        {
+                            var oldValue = match.Groups["oldValue"].Value;
+                            nuspecContent[i] = nuspecContent[i].Replace($"<version>{oldValue}</version>", $"<version>{newVersion}</version>");
+                            result = true;
+                        }
+                    }
+                    File.WriteAllLines(nugetFilePath, nuspecContent);
+                }
+                catch
+                {
+
+                }
+            }
+            return result;
         }
 
         public void DumpVersion(VersionCliArgs args)

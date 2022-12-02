@@ -1,4 +1,6 @@
-﻿namespace Skarp.Version.Cli
+﻿using System.IO;
+
+namespace Skarp.Version.Cli
 {
     public class VersionCliArgs
     {
@@ -40,5 +42,15 @@
         /// Override for the default `v<version>` vcs tag
         /// </summary>
         public string VersionControlTag { get; set; }
+
+        /// <summary>
+        /// Aggiunta per la versione in AssemblyInfo
+        /// </summary>
+        public string AssemblyInfoFilePath { get; set; }
+
+        /// <summary>
+        /// Aggiunta per la versione in nuspec
+        /// </summary>
+        public string NuspecFilePath { get; set; }
     }
 }

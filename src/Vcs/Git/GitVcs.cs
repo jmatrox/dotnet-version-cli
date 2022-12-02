@@ -14,7 +14,7 @@ namespace Skarp.Version.Cli.Vcs.Git
         {
             if(!LaunchGitWithArgs($"add \"{csProjFilePath}\""))
             {
-                throw new OperationCanceledException($"Unable to add cs proj file {csProjFilePath} to git index");
+                throw new OperationCanceledException($"Unable to add file {csProjFilePath} to git index");
             }
 
             if(!LaunchGitWithArgs($"commit -m \"{message}\""))

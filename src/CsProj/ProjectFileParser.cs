@@ -7,12 +7,12 @@ namespace Skarp.Version.Cli.CsProj
 {
     public class ProjectFileParser
     {
-        public virtual string PackageName { get; private set; }
+        public virtual string PackageName { get; protected set; }
         
-        public virtual string PackageVersion { get; private set; }
-        
-        public virtual string Version { get; private set; }
-        
+        public virtual string PackageVersion { get; protected set; }
+
+        public virtual string Version { get; protected set; }
+
         private IEnumerable<XElement> _propertyGroup { get; set; }
 
         public virtual void Load(string xmlDocument, ProjectFileProperty property)

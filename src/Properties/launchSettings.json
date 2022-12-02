@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "dotnet-version": {
+      "commandName": "Project",
+      "commandLineArgs": "-a \"D:\\GIT\\Alma.Library\\Alma.Base\\Properties\\AssemblyInfo.cs\" -n \"D:\\GIT\\Alma.Library\\Alma.Base\\Alma.Base.nuspec\" patch"
+    }
+  }
+}

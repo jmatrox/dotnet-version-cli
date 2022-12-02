@@ -97,9 +97,9 @@ namespace Skarp.Version.Cli
                     {
                         string commitFiles = string.Empty;
                         if (assemblyInfoAggiornato)
-                            commitFiles += $" \"{args.AssemblyInfoFilePath}\"";
+                            commitFiles += $" \"{args.AssemblyInfoFilePath.TrimStart('.','\\')}\"";
                         if (nuspecAggiornato)
-                            commitFiles += $" \"{args.NuspecFilePath}\"";
+                            commitFiles += $" \"{args.NuspecFilePath.TrimStart('.', '\\')}\"";
 
                         // Run git commands
                         _vcsTool.Commit(commitFiles, _vcsParser.Commit(theOutput, _fileParser, args.CommitMessage));

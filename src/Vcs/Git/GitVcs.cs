@@ -12,7 +12,7 @@ namespace Skarp.Version.Cli.Vcs.Git
         /// <param name="message">The message to include in the commit</param>
         public void Commit(string csProjFilePath, string message)
         {
-            if(!LaunchGitWithArgs($"add \"{csProjFilePath}\""))
+            if(!LaunchGitWithArgs($"add {csProjFilePath}"))
             {
                 throw new OperationCanceledException($"Unable to add file {csProjFilePath} to git index");
             }
